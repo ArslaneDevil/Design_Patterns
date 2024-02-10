@@ -68,7 +68,7 @@ public class GhostTests {
         Assert.assertEquals(this.execOutput, runMain(this.execOutput.sequence));
     }
 
-    private ExecOutput runMain(List<List<String>> sequence) throws IOException {
+    private ExecOutput runMain(List<List<String>> sequence) throws Exception {
         var out = System.out;
         ByteArrayOutputStream sout = new ByteArrayOutputStream();
         System.setOut(new PrintStream(sout));
