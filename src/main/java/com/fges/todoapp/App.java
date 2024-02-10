@@ -6,6 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
+import com.fges.todoapp.Storage.Todo.CSV.TodoReaderCSVStorage;
+import com.fges.todoapp.Storage.Todo.CSV.TodoWriterCSVStorage;
+import com.fges.todoapp.Storage.Todo.Json.TodoReaderJsonStorage;
+import com.fges.todoapp.Storage.Todo.Json.TodoWriterJsonStorage;
+import com.fges.todoapp.Storage.Todo.service.TodoWriterStorage;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -30,7 +35,7 @@ public class App {
         System.exit(exec(args));
     }
 
-    public static int exec(String[] args) throws IOException {
+    public static int exec(String[] args) throws Exception {
         Options cliOptions = new Options();
         CommandLineParser parser = new DefaultParser();
 
@@ -71,6 +76,7 @@ public class App {
 
             if (fileName.endsWith(".json")) {
                 // JSON
+                /*
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode actualObj = mapper.readTree(fileContent);
                 if (actualObj instanceof MissingNode) {
@@ -83,22 +89,32 @@ public class App {
                 }
 
                 Files.writeString(filePath, actualObj.toString());
+                */
+                TodoWriterJsonStorage Add_todo = new TodoWriterJsonStorage(fileContent, filePath);
+                Add_todo.writeTodo(todo);
             }
+
             if (fileName.endsWith(".csv")) {
                 // CSV
+                /*
                 if (!fileContent.endsWith("\n") && !fileContent.isEmpty()) {
                     fileContent += "\n";
                 }
                 fileContent += todo;
 
                 Files.writeString(filePath, fileContent);
+                */
+                TodoWriterCSVStorage Add_todo = new TodoWriterCSVStorage(fileContent, filePath);
+                Add_todo.writeTodo(todo);
             }
+
         }
 
 
         if (command.equals("list")) {
             if (fileName.endsWith(".json")) {
                 // JSON
+                /*
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode actualObj = mapper.readTree(fileContent);
                 if (actualObj instanceof MissingNode) {
@@ -109,13 +125,20 @@ public class App {
                 if (actualObj instanceof ArrayNode arrayNode) {
                     arrayNode.forEach(node -> System.out.println("- " + node.toString()));
                 }
+                 */
+                TodoReaderJsonStorage list_todos = new TodoReaderJsonStorage(fileContent);
+                list_todos.listTodo();
             }
             if (fileName.endsWith(".csv")) {
                 // CSV
+                /*
                 System.out.println(Arrays.stream(fileContent.split("\n"))
                         .map(todo -> "- " + todo)
                         .collect(Collectors.joining("\n"))
                 );
+                 */
+                TodoReaderCSVStorage list_todos = new TodoReaderCSVStorage(fileContent);
+                list_todos.listTodo();
             }
         }
 
