@@ -22,7 +22,18 @@ public class App {
         CommandLine cmd = CommandLineArgumentsParser.parseArguments(args);
         String fileName = cmd.getOptionValue("s");
         boolean isDone = cmd.hasOption("done");
-        TodoRepository repository;
+        Path path = Path.of(fileName);
+        TodoRepository repository = createRepositoryForPath(path);
+
+        if (cmd.hasOption("output")) {
+            String outputFileName = cmd.getOptionValue("output");
+            Path outputPath = Path.of(outputFileName);
+            TodoRepository outputRepository = createRepositoryForPath(outputPath);
+            List<TodoItem> todos = repository.getAllTodos();
+            for (TodoItem todo : todos) {
+                outputRepository.insert(todo);
+            }
+        }
 
         List<String> positionalArgs = cmd.getArgList();
         if (positionalArgs.isEmpty()) {
@@ -32,7 +43,7 @@ public class App {
 
         String command = positionalArgs.get(0);
 
-        Path filePath = Path.of(fileName);
+        Path filePath = path;
         if (fileName.endsWith(".json")) {
             repository = new JsonTodoRepository(filePath);
         } else if (fileName.endsWith(".csv")) {
@@ -46,12 +57,19 @@ public class App {
             repository.insert(newItem);
         } else if (command.equals("list")) {
             repository.findAll(isDone); // Vous devrez modifier cette méthode pour filtrer par l'état done si nécessaire
-        } else {
-            System.err.println("Unsupported command");
-            return 1;
         }
 
         System.err.println("Done.");
         return 0;
+    }
+
+    private static TodoRepository createRepositoryForPath(Path path) {
+        if (path.toString().endsWith(".json")) {
+            return new JsonTodoRepository(path);
+        } else if (path.toString().endsWith(".csv")) {
+            return new CsvTodoRepository(path);
+        } else {
+            throw new IllegalArgumentException("Unsupported file format: " + path);
+        }
     }
 }
