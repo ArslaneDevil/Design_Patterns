@@ -1,55 +1,28 @@
 package com.fges.todoapp;
 
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.MissingNode;
-import com.fges.todoapp.Storage.Todo.CSV.TodoReaderCSVStorage;
-import com.fges.todoapp.Storage.Todo.CSV.TodoWriterCSVStorage;
-import com.fges.todoapp.Storage.Todo.Json.TodoReaderJsonStorage;
-import com.fges.todoapp.Storage.Todo.Json.TodoWriterJsonStorage;
-import com.fges.todoapp.Storage.Todo.service.TodoWriterStorage;
-import org.apache.commons.cli.*;
+import com.fges.todoapp.cli.CommandLineArgumentsParser;
+import com.fges.todoapp.model.TodoItem;
+import com.fges.todoapp.repository.CsvTodoRepository;
+import com.fges.todoapp.repository.JsonTodoRepository;
+import com.fges.todoapp.repository.TodoRepository;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.ParseException;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-/**
- * Hello world!
- */
 public class App {
 
-    /**
-     * Do not change this method
-     */
     public static void main(String[] args) throws Exception {
         System.exit(exec(args));
     }
 
-    public static int exec(String[] args) throws Exception {
-        Options cliOptions = new Options();
-        CommandLineParser parser = new DefaultParser();
-
-        cliOptions.addRequiredOption("s", "source", true, "File containing the todos");
-
-        CommandLine cmd;
-        try {
-            cmd = parser.parse(cliOptions, args);
-        } catch (ParseException ex) {
-            System.err.println("Fail to parse arguments: " + ex.getMessage());
-            return 1;
-        }
-
+    public static int exec(String[] args) throws IOException, ParseException {
+        CommandLine cmd = CommandLineArgumentsParser.parseArguments(args);
         String fileName = cmd.getOptionValue("s");
+        boolean isDone = cmd.hasOption("done");
+        TodoRepository repository;
 
         List<String> positionalArgs = cmd.getArgList();
         if (positionalArgs.isEmpty()) {
@@ -59,87 +32,23 @@ public class App {
 
         String command = positionalArgs.get(0);
 
-        Path filePath = Paths.get(fileName);
-
-        String fileContent = "";
-
-        if (Files.exists(filePath)) {
-            fileContent = Files.readString(filePath);
+        Path filePath = Path.of(fileName);
+        if (fileName.endsWith(".json")) {
+            repository = new JsonTodoRepository(filePath);
+        } else if (fileName.endsWith(".csv")) {
+            repository = new CsvTodoRepository(filePath);
+        } else {
+            throw new IllegalArgumentException("Unsupported file format");
         }
 
-        if (command.equals("insert")) {
-            if (positionalArgs.size() < 2) {
-                System.err.println("Missing TODO name");
-                return 1;
-            }
-            String todo = positionalArgs.get(1);
-
-            if (fileName.endsWith(".json")) {
-                // JSON
-                /*
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode actualObj = mapper.readTree(fileContent);
-                if (actualObj instanceof MissingNode) {
-                    // Node was not reconised
-                    actualObj = JsonNodeFactory.instance.arrayNode();
-                }
-
-                if (actualObj instanceof ArrayNode arrayNode) {
-                    arrayNode.add(todo);
-                }
-
-                Files.writeString(filePath, actualObj.toString());
-                */
-                TodoWriterJsonStorage Add_todo = new TodoWriterJsonStorage(fileContent, filePath);
-                Add_todo.writeTodo(todo);
-            }
-
-            if (fileName.endsWith(".csv")) {
-                // CSV
-                /*
-                if (!fileContent.endsWith("\n") && !fileContent.isEmpty()) {
-                    fileContent += "\n";
-                }
-                fileContent += todo;
-
-                Files.writeString(filePath, fileContent);
-                */
-                TodoWriterCSVStorage Add_todo = new TodoWriterCSVStorage(fileContent, filePath);
-                Add_todo.writeTodo(todo);
-            }
-
-        }
-
-
-        if (command.equals("list")) {
-            if (fileName.endsWith(".json")) {
-                // JSON
-                /*
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode actualObj = mapper.readTree(fileContent);
-                if (actualObj instanceof MissingNode) {
-                    // Node was not recognised
-                    actualObj = JsonNodeFactory.instance.arrayNode();
-                }
-
-                if (actualObj instanceof ArrayNode arrayNode) {
-                    arrayNode.forEach(node -> System.out.println("- " + node.toString()));
-                }
-                 */
-                TodoReaderJsonStorage list_todos = new TodoReaderJsonStorage(fileContent);
-                list_todos.listTodo();
-            }
-            if (fileName.endsWith(".csv")) {
-                // CSV
-                /*
-                System.out.println(Arrays.stream(fileContent.split("\n"))
-                        .map(todo -> "- " + todo)
-                        .collect(Collectors.joining("\n"))
-                );
-                 */
-                TodoReaderCSVStorage list_todos = new TodoReaderCSVStorage(fileContent);
-                list_todos.listTodo();
-            }
+        if (command.equals("insert") && args.length > 1) {
+            TodoItem newItem = new TodoItem(positionalArgs.get(1), isDone);
+            repository.insert(newItem);
+        } else if (command.equals("list")) {
+            repository.findAll(isDone); // Vous devrez modifier cette méthode pour filtrer par l'état done si nécessaire
+        } else {
+            System.err.println("Unsupported command");
+            return 1;
         }
 
         System.err.println("Done.");

@@ -1,25 +1,11 @@
 # L3 design pattern report
 
-- **Firstname**: [Your firstname]
-- **Lastname**: [Your lastname]
+- **Firstname**: Nassim Arselan
+- **Lastname**: Benhamed
 
+Pour realiser mon architecture pour la todo-list, j'ai d'abord essayé de faire une structure similaire a votre exemple des list de teas (thés), 
+mais au fur et à mesure je me suis perdu dans votre code j'avais beaucoup d'incertitudes au niveau de votre code, donc a la fin vu que je n'avais 
+pas trop de temps j'ai essayer de dispatcher mon code, mais pour le temps qui me reste avant notre prochain cours j'essayerais de terminer les differentes 
+interfaces et la partie service.
 
-> Add your thoughts on every TP bellow, everything is interresting but no need to right a book.
-> 
-> Keep it short simple and efficient:
-> 
-> - What you did and why
-> - What helped you and why
-> - What did you find difficult
-> - What did not help you
-> - What did you need to change
-> - Anything relevant
-> 
-> Add a link to schemas describing your architecture (UML or not but add a legend)
-> 
-> Remember: it is ok to make mistakes, you will have time to spot them later.
-> 
-> Fill free to contact me if needed.
-
----
-...
+![Todo_Diagramme](https://github.com/ArslaneDevil/Design_Patterns/assets/114222870/cdc3ed2c-5cbd-409a-92d3-27d700110a82)
