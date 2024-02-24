@@ -5,6 +5,7 @@ import com.fges.todoapp.model.TodoItem;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,10 +24,9 @@ public class CsvTodoRepository implements TodoRepository {
         if (!Files.exists(filePath)) {
             Files.createFile(filePath);
         }
+        String content = item.isDone() ? "Done: " + item.getName() : item.getName();
+        Files.writeString(filePath, content + "\n", StandardOpenOption.APPEND, StandardOpenOption.CREATE);
 
-        String content = Files.readString(filePath);
-        content += (item.isDone() ? "Done: " : "") + item.getName() + "\n";
-        Files.writeString(filePath, content);
     }
 
     @Override
@@ -46,11 +46,14 @@ public class CsvTodoRepository implements TodoRepository {
     @Override
     public List<TodoItem> getAllTodos() throws IOException {
         List<TodoItem> todos = new ArrayList<>();
-        Files.lines(filePath).forEach(line -> {
-            boolean done = line.startsWith("Done: ");
-            String name = done ? line.substring(6) : line;
-            todos.add(new TodoItem(name, done));
-        });
+        if (Files.exists(filePath)) {
+            List<String> lines = Files.readAllLines(filePath);
+            for (String line : lines) {
+                boolean done = line.startsWith("Done: ");
+                String name = done ? line.substring(6) : line;
+                todos.add(new TodoItem(name, done));
+            }
+        }
         return todos;
     }
 }
