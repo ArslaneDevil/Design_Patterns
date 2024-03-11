@@ -1,10 +1,13 @@
 package com.fges.todoapp;
 
+import com.fges.todoapp.web.TodoServer;
+import com.fges.todoapp.Service.TodoService;
+import com.fges.todoapp.Storage.TodoStorageFactory;
 import com.fges.todoapp.cli.CommandLineArgumentsParser;
+import com.fges.todoapp.Storage.TodoStorage;
 import com.fges.todoapp.model.TodoItem;
-import com.fges.todoapp.repository.CsvTodoRepository;
-import com.fges.todoapp.repository.JsonTodoRepository;
-import com.fges.todoapp.repository.TodoRepository;
+
+import com.fges.todoapp.web.provider.TodoProvider;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 
@@ -18,22 +21,21 @@ public class App {
         System.exit(exec(args));
     }
 
-    public static int exec(String[] args) throws IOException, ParseException {
+    public static int exec(String[] args) throws IOException, ParseException, InterruptedException {
         CommandLine cmd = CommandLineArgumentsParser.parseArguments(args);
         String fileName = cmd.getOptionValue("s");
         boolean isDone = cmd.hasOption("done");
         Path path = Path.of(fileName);
-        TodoRepository repository = createRepositoryForPath(path);
+        TodoStorageFactory todoStorageFactory = new TodoStorageFactory(path);
+        TodoStorage todoStorage = todoStorageFactory.getTodoStorage(fileName);
+        TodoProvider todoProvider = new TodoProvider(todoStorage);
 
-        if (cmd.hasOption("output")) {
-            String outputFileName = cmd.getOptionValue("output");
-            Path outputPath = Path.of(outputFileName);
-            TodoRepository outputRepository = createRepositoryForPath(outputPath);
-            List<TodoItem> todos = repository.getAllTodos();
-            for (TodoItem todo : todos) {
-                outputRepository.insert(todo);
-            }
+        if (todoStorage == null) {
+            System.err.println("Unknown storage type, exiting...");
+            System.exit(1);
         }
+
+        var todoService = new TodoService(todoStorage);
 
         List<String> positionalArgs = cmd.getArgList();
         if (positionalArgs.isEmpty()) {
@@ -43,33 +45,23 @@ public class App {
 
         String command = positionalArgs.get(0);
 
-        Path filePath = path;
-        if (fileName.endsWith(".json")) {
-            repository = new JsonTodoRepository(filePath);
-        } else if (fileName.endsWith(".csv")) {
-            repository = new CsvTodoRepository(filePath);
-        } else {
-            throw new IllegalArgumentException("Unsupported file format");
-        }
+        switch (command) {
+            case "migrate" -> todoService.migrate(cmd);
+            case "insert" -> {
+                TodoItem newItem = new TodoItem(positionalArgs.get(1), isDone);
+                todoService.insert(newItem);
+            }
+            case "list" -> todoService.listTodos(isDone);
+            case "web" -> {
+                int port = Integer.parseInt(cmd.getOptionValue("port", "8888"));
+                TodoServer todoServer = new TodoServer(todoProvider,port);
+                todoServer.start();
 
-        if (command.equals("insert") && args.length > 1) {
-            TodoItem newItem = new TodoItem(positionalArgs.get(1), isDone);
-            repository.insert(newItem);
-        } else if (command.equals("list")) {
-            repository.findAll(isDone); // Vous devrez modifier cette méthode pour filtrer par l'état done si nécessaire
+            }
+            default -> System.err.println("Error Command");
         }
 
         System.err.println("Done.");
         return 0;
-    }
-
-    private static TodoRepository createRepositoryForPath(Path path) {
-        if (path.toString().endsWith(".json")) {
-            return new JsonTodoRepository(path);
-        } else if (path.toString().endsWith(".csv")) {
-            return new CsvTodoRepository(path);
-        } else {
-            throw new IllegalArgumentException("Unsupported file format: " + path);
-        }
     }
 }
