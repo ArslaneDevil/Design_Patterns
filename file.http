@@ -1,0 +1,11 @@
+GET http://localhost:8888/todos
+
+###
+
+POST http://localhost:8888/todos
+Content-Type: application/json
+
+{
+  "name": "hello world",
+  "done": true
+}
