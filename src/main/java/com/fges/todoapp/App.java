@@ -56,7 +56,7 @@ public class App {
                 int port = Integer.parseInt(cmd.getOptionValue("port", "8888"));
                 TodoServer todoServer = new TodoServer(todoProvider,port);
                 todoServer.start();
-
+                Thread.sleep(300000);
             }
             default -> System.err.println("Error Command");
         }
